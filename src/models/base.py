@@ -5,7 +5,6 @@ from sqlalchemy import Column, DateTime
 from src.main import session
 
 Model = declarative_base()
-
 Model.query = session.query_property()
 
 class TimeStampedModel(Model):
