@@ -5,10 +5,11 @@ from .base import TimeStampedModel
 
 class Fixture(TimeStampedModel):
     __tablename__ = "fixture"
-    home_goals = Integer()
-    away_goals = Integer()
-    season = Integer(nullable=False)
-    start_time = Date(nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    home_goals = Column(Integer)
+    away_goals = Column(Integer)
+    season = Column(Integer, nullable=False)
+    start_time = Column(Date, nullable=False)
 
 
     
