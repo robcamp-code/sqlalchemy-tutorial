@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Date
 from sqlalchemy.orm import Relationship
 from .base import Model
 from .base import TimeStampedModel
@@ -15,12 +15,24 @@ class Fixture(TimeStampedModel):
     home_goals = Column(Integer, nullable=True)
     away_goals = Column(Integer, nullable=True)
     season = Column(Integer, nullable=False)
-    start_time = Column(Date, nullable=False)
+    start_time = Column(DateTime, nullable=False)
+    tz_info = Column(String, nullable=False)
 
-    league = Relationship("League", back_populates="fixture", passive_deletes=True)
-    home_team = Relationship("Team", back_populates="fixture", passive_deletes=True)
-    away_team = Relationship("Team", back_populates="fixture", passive_deletes=True)
-    game_info = Relationship("GameInfo", back_populates="fixture", passive_deletes=True)
+    league = Relationship("League", 
+                          back_populates="fixture", 
+                          passive_deletes=True)
+    home_team = Relationship("Team", 
+                             passive_deletes=True,
+                             foreign_keys=[home_team_id])
+    away_team = Relationship("Team", 
+                             passive_deletes=True,
+                             foreign_keys=[away_team_id])
+    
+    # one-to-many collection with uselist = False forces it to be a one to one
+    officiator = Relationship("Officiator", 
+                             back_populates="fixture", 
+                             passive_deletes=True,
+                             uselist=False)
 
 
 class Team(Model):
@@ -28,10 +40,8 @@ class Team(Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
 
-    home_team = Relationship("Fixture", back_populates="team")
-    away_team = Relationship("Fixture", back_populates="team")
 
-    players = Relationship("player")
+    players = Relationship("player", secondary="team_player", back_populates="team", passive_deletes=True)
 
 
 class League(Model):
@@ -39,7 +49,7 @@ class League(Model):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    is_cup = Column(Boolean, nullable=False, default=False)
+    type = Column(String, nullable=False, default=False)
 
     fixture = Relationship("Fixture", back_populates="league", passive_deletes=True)
 
@@ -61,7 +71,10 @@ class Player(Model):
     teams = Relationship("Team", secondary="team_player", back_populates="player", passive_deletes=True)
 
 
-class GameInfo(Model):
-    __tablename__ = "game_info"
+class Officiator(Model):
+    __tablename__ = "officiator"
     id = Column(Integer, primary_key=True, autoincrement=True)
-
+    fixture_id = Column(Integer, ForeignKey("fixture.id"), unique=True, nullable=True)
+    
+    # many-to-one scalar unique constraint will enforce that it't trully a one-to-noe relationship
+    fixture = Relationship("Fixture", back_populates="officiator")

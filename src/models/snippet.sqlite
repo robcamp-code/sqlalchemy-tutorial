@@ -1,3 +1,10 @@
+CREATE TABLE league (
+        id INTEGER NOT NULL, 
+        name VARCHAR NOT NULL, 
+        is_cup BOOLEAN NOT NULL, 
+        PRIMARY KEY (id)
+)
+
 CREATE TABLE team (
         id INTEGER NOT NULL, 
         name VARCHAR NOT NULL, 
@@ -11,6 +18,7 @@ CREATE TABLE player (
 
 CREATE TABLE fixture (
         id INTEGER NOT NULL, 
+        league_id INTEGER NOT NULL, 
         home_team_id INTEGER NOT NULL, 
         away_team_id INTEGER NOT NULL, 
         home_goals INTEGER, 
@@ -20,6 +28,7 @@ CREATE TABLE fixture (
         created_at DATETIME, 
         updated_at DATETIME, 
         PRIMARY KEY (id), 
+        FOREIGN KEY(league_id) REFERENCES league (id) ON DELETE CASCADE, 
         FOREIGN KEY(home_team_id) REFERENCES team (id) ON DELETE CASCADE, 
         FOREIGN KEY(away_team_id) REFERENCES team (id) ON DELETE CASCADE
 )
