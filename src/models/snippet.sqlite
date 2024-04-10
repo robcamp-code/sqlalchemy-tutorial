@@ -1,0 +1,42 @@
+CREATE TABLE team (
+        id INTEGER NOT NULL, 
+        name VARCHAR NOT NULL, 
+        PRIMARY KEY (id)
+)
+
+CREATE TABLE player (
+        id INTEGER NOT NULL, 
+        PRIMARY KEY (id)
+)
+
+CREATE TABLE fixture (
+        id INTEGER NOT NULL, 
+        home_team_id INTEGER NOT NULL, 
+        away_team_id INTEGER NOT NULL, 
+        home_goals INTEGER, 
+        away_goals INTEGER, 
+        season INTEGER NOT NULL, 
+        start_time DATE NOT NULL, 
+        created_at DATETIME, 
+        updated_at DATETIME, 
+        PRIMARY KEY (id), 
+        FOREIGN KEY(home_team_id) REFERENCES team (id) ON DELETE CASCADE, 
+        FOREIGN KEY(away_team_id) REFERENCES team (id) ON DELETE CASCADE
+)
+
+CREATE TABLE team_player (
+        id INTEGER NOT NULL, 
+        name VARCHAR NOT NULL, 
+        team_id INTEGER NOT NULL, 
+        player_id INTEGER NOT NULL, 
+        from_date DATE NOT NULL, 
+        to_date DATE, 
+        PRIMARY KEY (id), 
+        FOREIGN KEY(team_id) REFERENCES team (id) ON DELETE CASCADE, 
+        FOREIGN KEY(player_id) REFERENCES player (id) ON DELETE CASCADE
+)
+
+CREATE TABLE game_info (
+        id INTEGER NOT NULL, 
+        PRIMARY KEY (id)
+)

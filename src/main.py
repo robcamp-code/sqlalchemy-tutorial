@@ -6,7 +6,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-engine = create_engine(f"sqlite:///{BASE_DIR}/db.sqlite", echo=True)
+engine = create_engine(f"sqlite:///{BASE_DIR}/db.sqlite3", echo=True)
 
 session = scoped_session(
     sessionmaker(
@@ -21,4 +21,3 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
-

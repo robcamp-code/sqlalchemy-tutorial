@@ -17,7 +17,7 @@ class Fixture(TimeStampedModel):
 
     home_team = Relationship("Team", back_populates="fixture", passive_deletes=True)
     away_team = Relationship("Team", back_populates="fixture", passive_deletes=True)
-    metadata = Relationship("Metadata", back_populates="fixture", passive_delete=True)
+    game_info = Relationship("GameInfo", back_populates="fixture", passive_deletes=True)
 
 
 class Team(Model):
@@ -35,8 +35,8 @@ class TeamPlayer(Model):
     __tablename__ = "team_player"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    team_id = Column(Integer, ForeignKey("team", ondelete="CASCADE"), nullable=False, index=True)
-    player_id = Column(Integer, ForeignKey("player", ondelete="CASCADE"), nullable=False, index=True)
+    team_id = Column(Integer, ForeignKey("team.id", ondelete="CASCADE"), nullable=False, index=True)
+    player_id = Column(Integer, ForeignKey("player.id", ondelete="CASCADE"), nullable=False, index=True)
     from_date = Column(Date, nullable=False)
     to_date = Column(Date, nullable=True)
 
@@ -48,7 +48,7 @@ class Player(Model):
     teams = Relationship("Team", secondary="team_player", back_populates="player", passive_deletes=True)
 
 
-class Metadata(Model):
-    __tablename__ = "metadata"
+class GameInfo(Model):
+    __tablename__ = "game_info"
     id = Column(Integer, primary_key=True, autoincrement=True)
 

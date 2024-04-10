@@ -1,5 +1,5 @@
 from src.main import session
-from src.models.data import User, Address, Preference, Role
+from src.models.schema import User, Address, Preference, Role
 
 role_data = [
     {"name": "Administrator", "slug": "admin"},
