@@ -32,8 +32,10 @@ def import_league(name, country):
 def import_teams(league_id, season):
     params = {"league": league_id, "season": season}
     response: list[dict] = get_data("teams", params)['response']
+    
     for object in response:
-        team = Team(id=object.get("id"), name=object.get("name"))
+        print(object)
+        team = Team(id=object['team'].get("id"), name=object['team'].get("name"))
         session.add(team)
 
 

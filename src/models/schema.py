@@ -41,7 +41,7 @@ class Team(Model):
     name = Column(String, nullable=False)
 
 
-    players = Relationship("player", secondary="team_player", back_populates="team", passive_deletes=True)
+    players = Relationship("Player", secondary="team_player", back_populates="teams", passive_deletes=True)
 
 
 class League(Model):
@@ -63,12 +63,14 @@ class TeamPlayer(Model):
     from_date = Column(Date, nullable=False)
     to_date = Column(Date, nullable=True)
 
+    Relationship()
+
     
 class Player(Model):
     __tablename__ = "player"
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    teams = Relationship("Team", secondary="team_player", back_populates="player", passive_deletes=True)
+    teams = Relationship("Team", secondary="team_player", back_populates="players", passive_deletes=True)
 
 
 class Officiator(Model):

@@ -7,7 +7,7 @@ if __name__ == "__main__":
     _ = create_db()
     league_id = import_league("Premier League", "England")
     _ = import_teams(league_id, SEASON)
-    _ = import_fixtures()
+    _ = import_fixtures(league_id, SEASON)
     session.commit()
 
 
