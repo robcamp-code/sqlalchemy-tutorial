@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, DateTime
-from src.main import session
+from main import session
 
 Model = declarative_base()
 Model.query = session.query_property()

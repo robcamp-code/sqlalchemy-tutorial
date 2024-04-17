@@ -40,8 +40,13 @@ class Team(Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
 
-
-    players = Relationship("Player", secondary="team_player", back_populates="teams", passive_deletes=True)
+    # one to many -> a team has many transfers
+    transfers_in = Relationship("transfer",
+                                back_populates="transfer_in",
+                                passive_deletes=True)
+    transfers_out = Relationship("transfer",
+                                 back_populates="transfers_out",
+                                 passive_deletes=True)
 
 
 class League(Model):
@@ -54,23 +59,40 @@ class League(Model):
     fixture = Relationship("Fixture", back_populates="league", passive_deletes=True)
 
 
-class TeamPlayer(Model):
-    __tablename__ = "team_player"
+class Transfer(Model):
+    __tablename__ = "transfer"
+    
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    team_id = Column(Integer, ForeignKey("team.id", ondelete="CASCADE"), nullable=False, index=True)
+    in_team_id = Column(Integer, ForeignKey("team.id", ondelete="CASCADE"), nullable=False, index=True)
+    out_team_id = Column(Integer, ForeignKey("team.id", ondelete="CASCADE"), nullable=False, index=True)
     player_id = Column(Integer, ForeignKey("player.id", ondelete="CASCADE"), nullable=False, index=True)
-    from_date = Column(Date, nullable=False)
-    to_date = Column(Date, nullable=True)
+    date = Column(Date, nullable=False)
 
-    Relationship()
+    transfer_in = Relationship("Team", 
+                             passive_deletes=True,
+                             foreign_keys=[in_team_id])
+    transfer_out = Relationship("Team", 
+                             passive_deletes=True,
+                             foreign_keys=[out_team_id])
+    
+    player = Relationship("Player",
+                          passive_deletes=True)
+
 
     
 class Player(Model):
     __tablename__ = "player"
+    
     id = Column(Integer, primary_key=True, autoincrement=True)
-
-    teams = Relationship("Team", secondary="team_player", back_populates="players", passive_deletes=True)
+    current_team_id = Column(Integer, ForeignKey("team.id", ondelete="CASCADE"), nullable = True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    age = Column(Integer, nullable=True)
+    nationality = Column(String, nullable=True)
+    position = Column(String, nullable=True)
+    
+    transfers = Relationship("transfer", back_populates="player", passive_deletes=True)
 
 
 class Officiator(Model):

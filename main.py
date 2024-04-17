@@ -1,12 +1,13 @@
 import os
+from pathlib import Path
 
 from sqlalchemy import create_engine, event, Engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 
-engine = create_engine(f"sqlite:///{BASE_DIR}/db.sqlite3", echo=True)
+engine = create_engine(f"sqlite:///{BASE_DIR}/db.sqlite3", echo=False)
 
 session = scoped_session(
     sessionmaker(

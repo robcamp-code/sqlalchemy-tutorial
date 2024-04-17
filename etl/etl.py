@@ -1,14 +1,20 @@
+from typing import List
 from datetime import datetime
+from itertools import chain
+import json
 import pytz
 
+
 import requests
-from src.constants import SPORTS_API_KEY
-from src.main import session
-from src.models.schema import League, Team, Fixture
+from types.responses import PlayerResponse
+from constants import SPORTS_API_KEY
+from main import session
+from models.schema import League, Team, Fixture, Player
 
 
 BASE_URL = "https://v3.football.api-sports.io"
 TIME_ZONE = 'US/Eastern'
+
 
 def get_data(endpoint, params={}):
     ''' get league data '''
@@ -22,6 +28,8 @@ def get_data(endpoint, params={}):
 
 
 def import_league(name, country):
+    """ get leagues with a given name and country and add that league to the db session """
+
     params = {"name": name, "country": country}
     response: dict = get_data("leagues", params)['response'][0]['league']
     league = League(id=response.get("id"), name=response.get("name"), type=response.get("type"))
@@ -30,16 +38,20 @@ def import_league(name, country):
 
 
 def import_teams(league_id, season):
+    """ get teams from a given league and season and add the teams to the db session """
+
     params = {"league": league_id, "season": season}
     response: list[dict] = get_data("teams", params)['response']
     
     for object in response:
-        print(object)
+        # print(object)
         team = Team(id=object['team'].get("id"), name=object['team'].get("name"))
         session.add(team)
 
 
 def import_fixtures(league_id, season):
+    """ get fixtures from a given league and season and add them to db session """
+    
     fixtures = get_data('fixtures', params={"league": league_id, "season": season})['response']
     for object in fixtures:
 
@@ -52,9 +64,22 @@ def import_fixtures(league_id, season):
                           tz_info=TIME_ZONE,
                           home_goals=object['score']['fulltime']['home'],
                           away_goals=object['score']['fulltime']['away'])
-        
         session.add(fixture)
 
 
-        
+def create_players_from_file(path):
+    """ create players from prefetched data of the 2022 season """
     
+    with open(path, "r") as f:
+        results = json.load(f)
+    results = list(map(lambda x: PlayerResponse(**{key: x[key] for key in ["player", "statistics"]}), results))
+    
+    for result in results:
+        player = Player(**result.player.model_dump())
+        team = Team.query.filter(Team.id == result.statistics[0].team.id).first()
+        if team:
+            player.teams.append(team)
+        else:
+            print(f"Team not found for this player")
+        session.add(player)
+
