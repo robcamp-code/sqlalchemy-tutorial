@@ -1,10 +1,12 @@
+""" schema.py """
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Date
 from sqlalchemy.orm import Relationship
-from .base import Model
-from .base import TimeStampedModel
+from models import Model
+from models import TimeStampedModel
 
 
 class Fixture(TimeStampedModel):
+    """ Fixture """
     __tablename__ = "fixture"
     id = Column(Integer, primary_key=True, autoincrement=True)
     
@@ -33,20 +35,26 @@ class Fixture(TimeStampedModel):
                              back_populates="fixture", 
                              passive_deletes=True,
                              uselist=False)
+    
+    events = Relationship("Event", 
+                             back_populates="fixture", 
+                             passive_deletes=True)
 
 
 class Team(Model):
     __tablename__ = "team"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-
+    logo = Column(String, nullable=True)
     # one to many -> a team has many transfers
-    transfers_in = Relationship("transfer",
-                                back_populates="transfer_in",
-                                passive_deletes=True)
-    transfers_out = Relationship("transfer",
-                                 back_populates="transfers_out",
-                                 passive_deletes=True)
+    # transfers_in = Relationship("Transfer",
+    #                             back_populates="transfer_in",
+    #                             passive_deletes=True,
+    #                             foreign_keys=["transfers_in"])
+    # transfers_out = Relationship("Transfer",
+    #                              back_populates="transfers_out",
+    #                              passive_deletes=True,
+    #                              foreign_keys=["transfers_out"])
 
 
 class League(Model):
@@ -63,11 +71,10 @@ class Transfer(Model):
     __tablename__ = "transfer"
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False)
     in_team_id = Column(Integer, ForeignKey("team.id", ondelete="CASCADE"), nullable=False, index=True)
     out_team_id = Column(Integer, ForeignKey("team.id", ondelete="CASCADE"), nullable=False, index=True)
     player_id = Column(Integer, ForeignKey("player.id", ondelete="CASCADE"), nullable=False, index=True)
-    date = Column(Date, nullable=False)
+    date = Column(Date, nullable=True)
 
     transfer_in = Relationship("Team", 
                              passive_deletes=True,
@@ -79,8 +86,7 @@ class Transfer(Model):
     player = Relationship("Player",
                           passive_deletes=True)
 
-
-    
+  
 class Player(Model):
     __tablename__ = "player"
     
@@ -92,7 +98,7 @@ class Player(Model):
     nationality = Column(String, nullable=True)
     position = Column(String, nullable=True)
     
-    transfers = Relationship("transfer", back_populates="player", passive_deletes=True)
+    transfers = Relationship("Transfer", back_populates="player", passive_deletes=True)
 
 
 class Officiator(Model):
@@ -102,3 +108,35 @@ class Officiator(Model):
     
     # many-to-one scalar unique constraint will enforce that it't trully a one-to-noe relationship
     fixture = Relationship("Fixture", back_populates="officiator")
+
+
+class Event(Model):
+    __tablename__ = "event"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    fixture_id = Column(Integer, ForeignKey("fixture.id", unique=True, nullable=True))
+    team_id = Column(Integer, ForeignKey("team.id", nullable=False))
+    assist_id = Column(Integer, ForeignKey("team.id", nullable=True))
+    player_id = Column(Integer, ForeignKey("team.id", nullable=False))
+
+    
+    time = Column(Integer, nullable=True)
+    
+    team = Relationship("Team", 
+                        passive_deletes=True,
+                        uselist=False)
+    
+    player = Relationship("Player", 
+                          passive_deletes=True,
+                          foreign_keys=[player_id],
+                          uselist=False)
+    assist = Relationship("Player", 
+                          passive_deletes=True,
+                          foreign_keys=[assist_id],
+                          uselist=False)
+    
+    type = Column(String, nullable=True)
+    detail  = Column(String, nullable=True)
+    comments = Column(String, nullable=True)
+
+    fixture = Relationship("Fixture", back_populates="events")

@@ -1,6 +1,6 @@
 import sys
 from main import create_engine, engine
-from models.base import Model
+from models import Model
 
 
 # print(Model.metadata)

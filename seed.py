@@ -1,15 +1,19 @@
-from etl.etl import import_league, import_teams, import_fixtures, create_players_from_file
-from utilities.functions import create_db
-from main import session, BASE_DIR
-SEASON = 2022
+from requests_cache import install_cache
 
+from etl.etl import *
+from main import session, BASE_DIR
+from schema.schema import Team
+
+SEASON = 2022
+install_cache('http_cache', backend='sqlite', expire_after=86400)
 
 if __name__ == "__main__":
-    _ = create_db()
     league_id = import_league("Premier League", "England")
-    _ = import_teams(league_id, SEASON)
-    _ = import_fixtures(league_id, SEASON)
+    teams = import_teams(league_id, SEASON)
+    fixtures = import_fixtures(league_id, SEASON)
     _ = create_players_from_file(BASE_DIR / "etl/prem-players.json")
+    _ = create_transfers(teams)
+    _ = import_events(fixtures)
     session.commit()
 
 
