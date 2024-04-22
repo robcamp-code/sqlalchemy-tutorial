@@ -4,7 +4,6 @@ from pydantic import (
     BaseModel, 
     Field, 
     conlist, 
-    field_validator,
     field_validator
 )
 
@@ -61,6 +60,9 @@ class FixtureTeams(BaseModel):
     home: TeamDetail
     away: TeamDetail
 
+class FixtureResponseTeams(BaseModel):
+    home: Team
+    away: Team
 
 class Goals(BaseModel):
     home: int
@@ -82,7 +84,7 @@ class Score(BaseModel):
 class FixtureResponse(BaseModel):
     fixture: Fixture
     league: League
-    teams: FixtureTeams
+    teams: FixtureResponseTeams
     goals: Goals
     score: Score
 
@@ -107,8 +109,8 @@ class PlayerResponse(BaseModel):
 
 
 class TransferPlayer(BaseModel):
-    id: int
-    name: str
+    id: Optional[int] = None
+    name: Optional[str] = None
 
 
 class TeamParent(BaseModel):

@@ -114,10 +114,10 @@ class Event(Model):
     __tablename__ = "event"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    fixture_id = Column(Integer, ForeignKey("fixture.id", unique=True, nullable=True))
-    team_id = Column(Integer, ForeignKey("team.id", nullable=False))
-    assist_id = Column(Integer, ForeignKey("team.id", nullable=True))
-    player_id = Column(Integer, ForeignKey("team.id", nullable=False))
+    fixture_id = Column(Integer, ForeignKey("fixture.id"), nullable=True)
+    team_id = Column(Integer, ForeignKey("team.id"), nullable=False)
+    assist_id = Column(Integer, ForeignKey("player.id"), nullable=True)
+    player_id = Column(Integer, ForeignKey("player.id"), nullable=False)
 
     
     time = Column(Integer, nullable=True)

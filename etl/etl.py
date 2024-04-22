@@ -27,9 +27,11 @@ from ptypes.responses import (
 
 BASE_URL = "https://v3.football.api-sports.io"
 TIME_ZONE = 'US/Eastern'
+
 ALL_TEAM_IDS = set([int(team.id) for team in Team.query.all()])
 ALL_PLAYERS = set([int(player.id) for player in Player.query.all()])
 ALL_FIXTURES = set([int(fixture.id) for fixture in Fixture.query.all()])
+
 succeed_count = 0
 events_count = 0
 
@@ -75,21 +77,24 @@ def import_fixtures(league_id, season):
     """ get fixtures from a given league and season and add them to db session """
     
     fixtures = get_data('fixtures', params={"league": league_id, "season": season})['response']
+    fixture_objects = []
     for object in fixtures:
-        object = FixtureResponse(object)
+        object = FixtureResponse(**object)
         if int(object.fixture.id) not in ALL_FIXTURES:
             start_time = datetime.fromtimestamp(object.fixture.timestamp, pytz.timezone(TIME_ZONE))
             fixture = Fixture(id=object.fixture.id,
-                            home_team_id=object.teams.home.id, 
-                            away_team_id=object.teams.away.id, 
-                            season=season, 
-                            league_id=league_id,
-                            start_time=start_time,
-                            tz_info=TIME_ZONE,
-                            home_goals=object.score.fulltime.home,
-                            away_goals=object.score.fulltime.away)
+                              home_team_id=object.teams.home.id, 
+                              away_team_id=object.teams.away.id, 
+                              season=season, 
+                              league_id=league_id,
+                              start_time=start_time,
+                              tz_info=TIME_ZONE,
+                              home_goals=object.score.fulltime.home,
+                              away_goals=object.score.fulltime.away)
             session.add(fixture)
-
+            fixture_objects.append(fixture)
+    return fixture_objects
+    
 
 def create_players_from_file(path):
     """ create players from prefetched data of the 2022 season """
@@ -118,13 +123,31 @@ def import_events(fixtures: List[Fixture]):
         try:
             events = get_data("fixtures/events", {"fixture": fixture.id})['response']
             for event in events:
-                event = EventResponse(event)
+                event = EventResponse(**event)
+                
+                # TODO: Make custom serializer
+                if event.assist.id: # event assist could be none
+                    if event.assist.id not in ALL_PLAYERS:
+                        name = event.assist.name.split(" ", 1)
+                        if len(name) < 2: name.append("")
+                        p = Player(id=event.assist.id, first_name=name[0], last_name=name[1])
+                        ALL_PLAYERS.add(int(p.id))
+                        session.add(p)
+                
+                if event.player.id not in ALL_PLAYERS:
+                    name = event.player.name.split(" ", 1)
+                    if len(name) < 2: name.append("")
+                    p = Player(id=event.player.id, first_name=name[0], last_name=name[1])
+                    ALL_PLAYERS.add(int(p.id))
+                    session.add(p)
+                
                 e = Event(assist_id=event.assist.id,
                           player_id=event.player.id,
+                          team_id=event.team.id,
                           type=event.type,
                           detail=event.detail,
                           comments=event.comments,
-                          time=event.time)
+                          time=event.time.elapsed)
                 session.add(e)
                 events_count += 1
         except Exception as error:

@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: bad3cbf3fd25
+Revision ID: cf10e119be85
 Revises: 
-Create Date: 2024-04-20 13:34:37.501538
+Create Date: 2024-04-22 14:59:24.018017
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'bad3cbf3fd25'
+revision: str = 'cf10e119be85'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -63,6 +63,22 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['current_team_id'], ['team.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('event',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('fixture_id', sa.Integer(), nullable=True),
+    sa.Column('team_id', sa.Integer(), nullable=False),
+    sa.Column('assist_id', sa.Integer(), nullable=True),
+    sa.Column('player_id', sa.Integer(), nullable=False),
+    sa.Column('time', sa.Integer(), nullable=True),
+    sa.Column('type', sa.String(), nullable=True),
+    sa.Column('detail', sa.String(), nullable=True),
+    sa.Column('comments', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['assist_id'], ['player.id'], ),
+    sa.ForeignKeyConstraint(['fixture_id'], ['fixture.id'], ),
+    sa.ForeignKeyConstraint(['player_id'], ['player.id'], ),
+    sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('officiator',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('fixture_id', sa.Integer(), nullable=True),
@@ -94,6 +110,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_transfer_in_team_id'), table_name='transfer')
     op.drop_table('transfer')
     op.drop_table('officiator')
+    op.drop_table('event')
     op.drop_table('player')
     op.drop_index(op.f('ix_fixture_league_id'), table_name='fixture')
     op.drop_index(op.f('ix_fixture_home_team_id'), table_name='fixture')
