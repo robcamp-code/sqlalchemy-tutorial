@@ -1,5 +1,5 @@
 """ schema.py """
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Date
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Date, Float
 from sqlalchemy.orm import Relationship
 from models import Model
 from models import TimeStampedModel
@@ -39,6 +39,11 @@ class Fixture(TimeStampedModel):
     events = Relationship("Event", 
                              back_populates="fixture", 
                              passive_deletes=True)
+    
+    # many to many with players
+    players = Relationship("Player",
+                           secondary="statistic",
+                           passive_deletes=True)
 
 
 class Team(Model):
@@ -86,7 +91,48 @@ class Transfer(Model):
     player = Relationship("Player",
                           passive_deletes=True)
 
-  
+
+class Statistic(Model):
+    __tablename__ = "statistic"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    team_id = Column(ForeignKey("team.id", ondelete='CASCADE'), nullable=False, index=True)
+    player_id = Column(ForeignKey("player.id", ondelete='CASCADE'), nullable=False, index=True)
+    fixture_id = Column(ForeignKey("fixture.id", ondelete='CASCADE'), nullable=False, index=True)
+    
+    
+    minutes = Column(Float, nullable=True)
+    rating = Column(Float, nullable=True)
+    substitute = Column(Boolean, nullable=True)
+    captain = Column(Boolean, nullable=True)
+    position = Column(String, nullable=True) # " G D MF F"
+    goals_total = Column(Integer, nullable=True)
+    goals_conceded = Column(Integer, nullable=True)
+    assists = Column(Integer, nullable=True)
+    saves = Column(Integer, nullable=True)
+    total_passes = Column(Integer, nullable=True)
+    key_passes = Column(Integer, nullable=True)
+    passing_accuracy = Column(Integer, nullable=True)
+    tackles = Column(Integer, nullable=True)
+    blocks = Column(Integer, nullable=True)
+    interceptions = Column(Integer, nullable=True)
+    total_duels = Column(Integer, nullable=True)
+    duels_won = Column(Integer, nullable=True)
+    dribble_attempts = Column(Integer, nullable=True)
+    successful_dribbles = Column(Integer, nullable=True)
+    fouls_drawn = Column(Integer, nullable=True)
+    fouls_committed = Column(Integer, nullable=True)
+    yellow_cards = Column(Integer, nullable=True)
+    red_cards = Column(Integer, nullable=True)
+    penalties_won = Column(Integer, nullable=True)
+    penalties_commited = Column(Integer, nullable=True)
+    penalties_scored = Column(Integer, nullable=True)
+    penalties_missed = Column(Integer, nullable=True)
+    penalties_saved = Column(Integer, nullable=True)
+
+    team = Relationship("Team", passive_deletes=True)
+    
+
 class Player(Model):
     __tablename__ = "player"
     
@@ -99,6 +145,9 @@ class Player(Model):
     position = Column(String, nullable=True)
     
     transfers = Relationship("Transfer", back_populates="player", passive_deletes=True)
+    
+    # many to many with fixtures
+    fixtures = Relationship("Fixture", secondary="statistic", back_populates="players", passive_deletes=True)
 
 
 class Officiator(Model):

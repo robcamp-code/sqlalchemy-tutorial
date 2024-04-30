@@ -4,7 +4,7 @@ import logging
 from sqlalchemy.orm import aliased
 from sqlalchemy import or_, and_, desc, asc
 
-from models.schema import Team, Player, Fixture
+from schema.schema import Team, Player, Fixture
 
 # logging.basicConfig()
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.NOTSET)

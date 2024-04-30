@@ -2,6 +2,7 @@ from typing import List
 from datetime import datetime
 from itertools import chain
 import json
+import time
 
 import pytz
 import requests
@@ -14,15 +15,16 @@ from schema.schema import (
     Fixture, 
     Player, 
     Transfer,
-    Event
+    Event,
+    Statistic
 )
-
 from ptypes.responses import (
     PlayerResponse, 
     TransferResponse, 
     FixtureResponse, 
     EventResponse
 )
+from ptypes.player import PlayerStatistic
 
 
 BASE_URL = "https://v3.football.api-sports.io"
@@ -31,6 +33,8 @@ TIME_ZONE = 'US/Eastern'
 ALL_TEAM_IDS = set([int(team.id) for team in Team.query.all()])
 ALL_PLAYERS = set([int(player.id) for player in Player.query.all()])
 ALL_FIXTURES = set([int(fixture.id) for fixture in Fixture.query.all()])
+FIXTURE_STATISTICS =  set([int(stat.fixture_id) for stat in Statistic.query.all()])
+
 
 succeed_count = 0
 events_count = 0
@@ -96,6 +100,47 @@ def import_fixtures(league_id, season):
     return fixture_objects
     
 
+error_count = 0
+def get_all_fixture_statistics(fixtures: List[Fixture]):
+    """ get statistics for all fixtures """
+    global error_count
+    
+    num_success = 0
+    for fixture in fixtures:
+        # print(fixture.id)
+        if fixture.id not in FIXTURE_STATISTICS:
+            response = get_data("fixtures/players", {"fixture": fixture.id})
+            
+            
+            for res in response['response']:
+                
+                team = PlayerStatistic.model_validate(res)
+                for player in team.players:
+                    try:
+                        if int(player.player.id) not in ALL_PLAYERS:
+                            # print(f"creating player {player.player.id} that does not exist")
+                            names = player.player.name.split(" ", 1)
+                            if len(names) < 2: names.append("")
+                            p = Player(id=player.player.id, first_name=names[0], last_name=names[1])
+                            ALL_PLAYERS.add(player.player.id)
+                            session.add(p)
+                        
+                        # print(fixture.id)
+                        statistic = Statistic(**player.model_dump(),
+                                                team_id=team.team.id,
+                                                player_id=player.player.id,
+                                                fixture_id=fixture.id)
+                        session.add(statistic)
+                        
+                    except Exception as error:
+                        print(error)
+                        error_count += 1
+                        print(f"ERROR COUNT: {error_count}")
+            
+    
+
+                
+
 def create_players_from_file(path):
     """ create players from prefetched data of the 2022 season """
     
@@ -121,6 +166,7 @@ def import_events(fixtures: List[Fixture]):
     global events_count
     for fixture in fixtures:
         try:
+            
             events = get_data("fixtures/events", {"fixture": fixture.id})['response']
             for event in events:
                 event = EventResponse(**event)
