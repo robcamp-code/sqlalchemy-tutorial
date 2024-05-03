@@ -1,6 +1,6 @@
 --SQLite
-DROP VIEW IF EXISTS cummlative_goals;
-CREATE VIEW cummlative_goals as
+DROP VIEW IF EXISTS annotated_fixture;
+CREATE VIEW annotated_fixture as 
 SELECT 
   start_time,
   id, 
@@ -8,9 +8,77 @@ SELECT
   away_team_id,
   home_goals,
   away_goals,
-  home_goals - away_goals as goal_diff
+  home_goals > away_goals as home_win,
+  away_goals > home_goals as away_win,
+  home_goals = away_goals as is_draw
+FROM fixture;
+SELECT * FROM annotated_fixture;
+
+
+DROP VIEW IF EXISTS cummulative_goals;
+CREATE VIEW cummulative_goals as
+SELECT 
+  start_time,
+  id, 
+  home_team_id,
+  away_team_id,
+  home_goals,
+  away_goals,
+  home_win,
+  away_win,
+  is_draw,
   
-  -- Home Team
+  -- Cummulative wins losses and draws for HOME TEAM
+  SUM(CASE WHEN home_team_id = f.home_team_id THEN home_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS H_WINS_AT_HOME,
+
+  SUM(CASE WHEN home_team_id = f.home_team_id THEN away_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS H_LOSSES_AT_HOME,
+  
+  SUM(CASE WHEN home_team_id = f.home_team_id THEN is_draw ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS H_DRAWS_AT_HOME,
+  
+  SUM(CASE WHEN away_team_id = f.home_team_id THEN away_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS H_WINS_ON_THE_ROAD,
+  
+  SUM(CASE WHEN away_team_id = f.home_team_id THEN home_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS H_LOSSES_ON_THE_ROAD,
+  
+  SUM(CASE WHEN away_team_id = f.home_team_id THEN is_draw ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS H_DRAWS_ON_THE_ROAD,
+  
+  -- Cummulative wins losses and draws for AWAY TEAM
+  SUM(CASE WHEN home_team_id = f.away_team_id THEN away_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS A_WINS_AT_HOME,
+
+  SUM(CASE WHEN home_team_id = f.away_team_id THEN home_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS A_LOSSES_AT_HOME,
+  
+  SUM(CASE WHEN home_team_id = f.away_team_id THEN is_draw ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS A_DRAWS_AT_HOME,
+  
+  SUM(CASE WHEN away_team_id = f.away_team_id THEN away_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS A_WINS_ON_THE_ROAD,
+  
+  SUM(CASE WHEN away_team_id = f.away_team_id THEN home_win ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS A_LOSSES_ON_THE_ROAD,
+  
+  SUM(CASE WHEN away_team_id = f.away_team_id THEN is_draw ELSE 0 END) 
+  OVER (PARTITION BY home_team_id ORDER BY start_time 
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS A_DRAWS_ON_THE_ROAD,
+
+  -- Cummulative goals
   (
     SELECT SUM(home_goals) 
     FROM Fixture 
@@ -66,10 +134,16 @@ SELECT
     WHERE away_team_id = f.away_team_id 
     AND start_time < f.start_time
   ) AS A_GF_ON_THE_ROAD
-FROM fixture as f
-ORDER BY home_team_id;
 
-CREATE grouped_stats as 
+FROM annotated_fixture as f;
+
+-- SANITY CHECK
+SELECT start_time, home_team_id, away_team_id, home_goals, away_goals, H_WINS_AT_HOME, H_LOSSES_AT_HOME, H_DRAWS_AT_HOME  FROM cummulative_goals
+WHERE home_team_id=33
+ORDER BY start_time;
+
+DROP VIEW IF EXISTS grouped_stats
+CREATE VIEW grouped_stats as 
 SELECT
   team_id,
   fixture_id,
@@ -89,7 +163,7 @@ WHERE substitute = 0
 GROUP BY fixture_id, team_id, position
 ORDER BY fixture_id, team_id DESC;
 
-DROP VIEW IF EXISTS defener_stats;
+DROP VIEW IF EXISTS defender_stats;
 CREATE VIEW defender_stats as
 SELECT * FROM grouped_stats as gs
 WHERE position = 'D';
@@ -99,7 +173,7 @@ CREATE VIEW midfield_stats as
 SELECT * FROM grouped_stats as gs
 WHERE position = 'M';
 
-DROP VIEW IF EXISTS forward_stats
+DROP VIEW IF EXISTS forward_stats;
 CREATE VIEW forward_stats as
 SELECT * FROM grouped_stats as gs
 WHERE position = 'F';
@@ -108,6 +182,7 @@ SELECT * FROM forward_stats;
 SELECT * FROM midfield_stats;
 SELECT * FROM defender_stats;
 
+-- WINDOW Function Example
 SELECT *, 
   AVG(average_passing_percentage) OVER(PARTITION BY team_id ORDER BY start_time ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS cumulative_average_passing_percentage,
   AVG(average_duels_won_percentage) OVER(PARTITION BY team_id ORDER BY start_time ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS cumulative_duels_won_percentage,
@@ -120,12 +195,13 @@ SELECT *,
   AVG(dribble_success_percentage) OVER(PARTITION BY team_id ORDER BY start_time ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS cumulative_average_dribble_success_percentage
 FROM forward_stats;
 
+
+
+DROP VIEW IF EXISTS denorm_stats;
 CREATE VIEW denorm_stats as
 SELECT 
-  COUNT(
   
   cg.*,
-  -- HOME
   -- FORWARDS
   AVG(hfs.average_passing_percentage) OVER(PARTITION BY hfs.team_id ORDER BY cg.start_time ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS home_forwards_cumulative_average_passing_percentage,
   AVG(hfs.average_duels_won_percentage) OVER(PARTITION BY hfs.team_id ORDER BY cg.start_time ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS home_forwards_cumulative_duels_won_percentage,
@@ -195,7 +271,7 @@ SELECT
   AVG(ads.dribble_success_percentage) OVER(PARTITION BY ads.team_id ORDER BY cg.start_time ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS away_defenders_cumulative_average_dribble_success_percentage
   
   
-FROM cummlative_goals as cg
+FROM cummulative_goals as cg
 
 LEFT JOIN forward_stats as hfs
 ON cg.id = hfs.fixture_id AND cg.home_team_id=hfs.team_id
@@ -214,14 +290,7 @@ ON cg.id = ams.fixture_id AND cg.away_team_id = ams.team_id
 
 ORDER BY start_time;
 
-
+-- FINAL SANITY CHECK
 SELECT * FROM denorm_stats;
-
-SELECT * FROM cummlative_goals;
-
-
--- GROUP BY team_id
--- ORDER BY AVG(passing_accuracy) DESC;
-
--- DELETE FROM statistic;
+SELECT * FROM cummulative_goals;
 
