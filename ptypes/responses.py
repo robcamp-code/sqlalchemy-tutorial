@@ -14,9 +14,9 @@ class Periods(BaseModel):
 
 
 class Venue(BaseModel):
-    id: int
-    name: str
-    city: str
+    id: Optional[int] = None
+    name: Optional[str] = None
+    city: Optional[str] = None
 
 
 class Status(BaseModel):
@@ -32,7 +32,7 @@ class Fixture(BaseModel):
     date: str
     timestamp: int
     periods: Periods
-    venue: Venue
+    venue: Optional[Venue] = None
     status: Status
 
 
@@ -60,9 +60,11 @@ class FixtureTeams(BaseModel):
     home: TeamDetail
     away: TeamDetail
 
+
 class FixtureResponseTeams(BaseModel):
     home: Team
     away: Team
+
 
 class Goals(BaseModel):
     home: int
@@ -143,6 +145,7 @@ class TransferResponse(BaseModel):
 class Time(BaseModel):
     elapsed: int
     extra: Optional[int]  # assuming the type should be int when not null
+
 
 class EventResponse(BaseModel):
     time: Time

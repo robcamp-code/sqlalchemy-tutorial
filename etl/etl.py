@@ -6,7 +6,7 @@ import time
 
 import pytz
 import requests
-
+from sqlalchemy import and_
 from constants import SPORTS_API_KEY
 from main import session
 from schema.schema import (
@@ -47,7 +47,7 @@ def get_data(endpoint, params={}):
         'x-rapidapi-key': SPORTS_API_KEY
     }
     response = requests.get(f"{BASE_URL}/{endpoint}", headers=headers, params=params)
-    print(f"USED CACHE: {response.from_cache}")
+    # print(f"USED CACHE: {response.from_cache}")
     data = response.json()
     return data
 
@@ -70,10 +70,11 @@ def import_teams(league_id, season) -> List[Team]:
     
     for object in response:
         # print(object)
-        team = Team(id=object['team'].get("id"), name=object['team'].get("name"))
-        teams.append(team)
-        ALL_TEAM_IDS.add(int(team.id))
-        session.add(team)
+        if object['team'].get("id") not in ALL_TEAM_IDS:
+            team = Team(id=object['team'].get("id"), name=object['team'].get("name"))
+            teams.append(team)
+            ALL_TEAM_IDS.add(int(team.id))
+            session.add(team)
     return teams
 
 
@@ -95,6 +96,7 @@ def import_fixtures(league_id, season):
                               tz_info=TIME_ZONE,
                               home_goals=object.score.fulltime.home,
                               away_goals=object.score.fulltime.away)
+            ALL_FIXTURES.add(object.fixture.id)
             session.add(fixture)
             fixture_objects.append(fixture)
     return fixture_objects
@@ -117,7 +119,16 @@ def get_all_fixture_statistics(fixtures: List[Fixture]):
                 team = PlayerStatistic.model_validate(res)
                 for player in team.players:
                     try:
+                        # if player.player.id == 18911:
+                        #     print(f"ERRONEOUS PLAYER: {player.player.id}")
+                        #     print(player.player.id in ALL_PLAYERS)
+                        
+                        if fixture.id not in ALL_FIXTURES:
+                            print("fixture not in all fixtures")
+
                         if int(player.player.id) not in ALL_PLAYERS:
+                            if player.player.id == 18911:
+                                print("candidate found and added while adding statistics")
                             # print(f"creating player {player.player.id} that does not exist")
                             names = player.player.name.split(" ", 1)
                             if len(names) < 2: names.append("")
@@ -138,6 +149,20 @@ def get_all_fixture_statistics(fixtures: List[Fixture]):
                         print(f"ERROR COUNT: {error_count}")
             
     
+def import_players(league: int, season: int):
+    """ import players """
+    response = get_data("players", {"league": league, "season": season})
+
+    for object in response['response']:
+        player = PlayerResponse.model_validate(object)
+
+        if int(player.player.id) not in ALL_PLAYERS:
+            if player.player.id == 18911:
+                print("candidate found and added")
+            
+            instance = Player(**player.player.model_dump())
+            ALL_PLAYERS.add(int(player.player.id))
+            session.add(instance)
 
                 
 
@@ -210,7 +235,6 @@ def create_transfers(teams: List[Team]):
         for transfer in transfers:
             try:
                 transfer = TransferResponse(**transfer)
-                
                 if int(transfer.player.id) not in ALL_PLAYERS:
                     name = transfer.player.name.split(" ", 1)
                     p = Player(id=transfer.player.id, first_name=name[0], last_name=name[1])
@@ -218,6 +242,10 @@ def create_transfers(teams: List[Team]):
                     session.add(p)
                 
                 for transfer_object in transfer.transfers:
+                    # if the transfer already exists continue
+                    # TODO: ENSURE transfers are created only once:
+                    # Transfer.query.filter(and_(Transfer.player_id == transfer.player.id, Transfer.in_team_id == transfer_object))
+                    
                     if transfer_object.teams.transfer_in.id not in ALL_TEAM_IDS:
                         print(f"NEW IN TEAM WITH ID: {transfer_object.teams.transfer_in.id}")
                         new_team = Team(**transfer_object.teams.transfer_in.model_dump())
@@ -231,9 +259,9 @@ def create_transfers(teams: List[Team]):
                         session.add(new_team)
                     
                     t = Transfer(player_id=transfer.player.id, 
-                                in_team_id=transfer_object.teams.transfer_in.id,
-                                out_team_id=transfer_object.teams.transfer_out.id,
-                                date=transfer_object.date)
+                                 in_team_id=transfer_object.teams.transfer_in.id,
+                                 out_team_id=transfer_object.teams.transfer_out.id,
+                                 date=transfer_object.date)
                     succeed_count += 1
                     session.add(t)
             

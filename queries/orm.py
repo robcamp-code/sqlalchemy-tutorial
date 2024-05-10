@@ -2,9 +2,9 @@ from typing import List
 import logging
 
 from sqlalchemy.orm import aliased
-from sqlalchemy import or_, and_, desc, asc
+from sqlalchemy import or_, and_, desc, asc, delete
 
-from schema.schema import Team, Player, Fixture
+from schema.schema import Team, Player, Fixture, Transfer
 
 # logging.basicConfig()
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.NOTSET)
@@ -63,6 +63,9 @@ def get_players() -> List[Player]:
 
     players = Player.query.all()
     return players
+
+def remove_transfers():
+    Transfer.query.all().delete()
 
 
 if __name__ == "__main__":

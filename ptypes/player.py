@@ -18,6 +18,13 @@ class Games(BaseModel):
     captain: bool = False
     substitute: bool
 
+    @field_validator('rating', mode='before')
+    @classmethod
+    def not_enough_info(cls, val):
+        if isinstance(val, str):
+            return None
+        return val
+
 
 class Goals(BaseModel):
     goals_total: Optional[int] = Field(None, validation_alias='total')
@@ -81,7 +88,7 @@ class Statistic(BaseModel):
 class Player(BaseModel):
     id: int
     name: str
-    photo: str
+    photo: Optional[str] = None
 
 
 class PlayerParent(BaseModel):
@@ -106,7 +113,6 @@ class PlayerParent(BaseModel):
 class Players(BaseModel):
     player: PlayerParent
    
-
 
 class PlayerStatisticTeam(Team):
     update: datetime
