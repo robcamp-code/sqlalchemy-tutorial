@@ -1,0 +1,2 @@
+,home_train_mae,home_test_mae,away_train_mae,away_test_mae,dataset_path,home_model_path,away_model_path,test_size
+0,0.8988902589395807,0.9507389162561576,0.8351829017673654,0.9507389162561576,../data/trial_0/prem_data.csv,../data/trial_0/home_pipeline.joblib,../data/trial_0/away_pipeline.joblib,0.2

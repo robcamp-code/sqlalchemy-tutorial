@@ -36,7 +36,7 @@ class DateTransformer(BaseEstimator, TransformerMixin):
         return 0
     
     def time_of_day_classification(self, date:datetime) -> int:
-        """TODO implement time of day classification: Morning, Midday, Night """
+        """ TODO implement time of day classification: Morning, Midday, Night """
         pass
 
     def transform(self, X:pd.DataFrame):
