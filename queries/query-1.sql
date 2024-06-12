@@ -4,6 +4,7 @@ CREATE VIEW annotated_fixture as
 SELECT 
   start_time,
   fixture.id, 
+  season,
   home_team_id,
   away_team_id,
   home_team.name as home_name,
@@ -20,6 +21,11 @@ ON home_team.id = fixture.home_team_id
 LEFT JOIN team as away_team
 ON away_team.id = fixture.away_team_id;
 SELECT * FROM annotated_fixture;
+
+
+SELECT * FROM statistic;
+
+
 
 
 DROP VIEW IF EXISTS cummulative_goals;

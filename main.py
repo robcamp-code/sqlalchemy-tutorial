@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, event, Engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 
-BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path('../').absolute()
 
 engine = create_engine(f"sqlite:///{BASE_DIR}/db.sqlite3", echo=False)
 

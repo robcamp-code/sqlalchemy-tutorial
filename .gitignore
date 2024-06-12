@@ -161,4 +161,3 @@ cython_debug/
 
 **/http_cache.sqlite
 http_cache.sqlite3
-*.ipynb
