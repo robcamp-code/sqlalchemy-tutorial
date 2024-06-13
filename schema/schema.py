@@ -51,15 +51,24 @@ class Team(Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     logo = Column(String, nullable=True)
-    # one to many -> a team has many transfers
-    # transfers_in = Relationship("Transfer",
-    #                             back_populates="transfer_in",
-    #                             passive_deletes=True,
-    #                             foreign_keys=["transfers_in"])
-    # transfers_out = Relationship("Transfer",
-    #                              back_populates="transfers_out",
-    #                              passive_deletes=True,
-    #                              foreign_keys=["transfers_out"])
+    venue = Relationship("Venue", 
+                         back_populates="team", 
+                         passive_deletes=True, 
+                         uselist=False)
+
+
+class Venue(Model):
+    __tablename__ = "venue"
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    capacity = Column(String, nullable=True)
+    surface = Column(String, nullable=True)
+    image = Column(String, nullable=True)
+    team_id = Column(Integer, ForeignKey("team.id", ondelete='CASCADE'), nullable=False)
+
 
 
 class League(Model):
@@ -70,6 +79,7 @@ class League(Model):
     type = Column(String, nullable=False, default=False)
 
     fixture = Relationship("Fixture", back_populates="league", passive_deletes=True)
+
 
 
 class Transfer(Model):
