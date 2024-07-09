@@ -67,7 +67,8 @@ class Venue(Model):
     capacity = Column(String, nullable=True)
     surface = Column(String, nullable=True)
     image = Column(String, nullable=True)
-    team_id = Column(Integer, ForeignKey("team.id", ondelete='CASCADE'), nullable=False)
+    team_id = Column(Integer, ForeignKey("team.id", ondelete='CASCADE'), nullable=False, unique=True)
+    team = Relationship("Team", back_populates="venue")
 
 
 

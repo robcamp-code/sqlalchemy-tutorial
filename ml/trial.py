@@ -5,6 +5,8 @@ import shutil
 from category_encoders import OneHotEncoder
 from joblib import load, dump
 import pandas as pd
+import numpy as np
+from sklearn import set_config
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import ElasticNet
 from sklearn.pipeline import Pipeline
@@ -69,10 +71,19 @@ def create_trial_folder(dataset, trial_number:int):
     Path.mkdir(f'../data/trial_{trial_number}')
     shutil.copy(dataset, f'../data/trial_{trial_number}/dataset.csv')
     
-    
+
+
+def get_feature_importances(pipeline, X_test):
+    regressor = pipeline['regressor'].best_estimator_
+    coefs = list(np.round(regressor.coef_, 3))
+    features = pipeline['preprocessor'].transform(X_test).columns.to_list()
+    zipped = list(zip(coefs, features))
+    feature_importances = sorted(zipped, key=lambda x: abs(x[0]), reverse=True)
+    return feature_importances
+
+
 def run_trial():
     """ 
-    
     1. take csv file load dataframe
     2. train test split dataframe
     3. define pipeline
@@ -81,7 +92,6 @@ def run_trial():
     6. create hyperparameter table
     7. TODO: bootstrap ci
     8. TODO: bias variance tradeoff
-    
     """
 
     # create trial
@@ -91,11 +101,9 @@ def run_trial():
         next_trial = trial_number + 1
         f.seek(0)
         f.write(str(next_trial))
-    
     create_trial_folder('../data/preprocessed.csv', trial_number)
     
-    # TODO: pull sql tables and run them through preprocess functions. Store preprocessor to joblib
-    df = pd.read_csv(f"../data/trial_{trial_number}/dataset.csv")
+    df = pd.read_csv(f"../data/trial_{trial_number}/dataset.csv", )
     df['start_time'] = pd.to_datetime(df['start_time'])
     col_types = get_columns_by_type(df)
     print(col_types)
@@ -121,7 +129,6 @@ def run_trial():
                                     parameters=params)
     
     # train fit predict
-    home_pipeline["preprocessor"].fit(X_train)
     home_pipeline.fit(X_train, y_home_train)
     home_train_pred = home_pipeline.predict(X_train).round()
     away_pipeline.fit(X_train, y_away_train)
@@ -138,9 +145,16 @@ def run_trial():
     away_train_mae = mean_absolute_error(away_train_pred, y_away_train)
     away_test_mae = mean_absolute_error(away_test_pred, y_away_test)
 
-    # store model with joblib
-    dump(home_pipeline, f'../data/trial_{trial_number}/home_pipeline.joblib')
-    dump(away_pipeline, f'../data/trial_{trial_number}/away_pipeline.joblib')
+    # store model and feature importances with joblib
+    Path.mkdir(f'../data/trial_{trial_number}/models')
+    dump(home_pipeline, f'../data/trial_{trial_number}/models/home_pipeline.joblib')
+    dump(away_pipeline, f'../data/trial_{trial_number}/models/away_pipeline.joblib')
+
+    home_features = get_feature_importances(home_pipeline, X_test)
+    away_features = get_feature_importances(away_pipeline, X_test)
+    Path.mkdir(f'../data/trial_{trial_number}/features')
+    dump(home_features, f'../data/trial_{trial_number}/features/home_features.joblib')
+    dump(away_features, f'../data/trial_{trial_number}/features/away_features.joblib')
     
     # create hyperparameter table
     trial_results = pd.DataFrame({
@@ -164,4 +178,5 @@ def run_trial():
 
 
 if __name__ == "__main__":
+    set_config(transform_output="pandas")
     run_trial()

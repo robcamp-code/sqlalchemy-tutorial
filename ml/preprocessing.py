@@ -164,7 +164,7 @@ def get_stats(row):
     home_stats.index = ["home_" + name for name in home_stats.index]
     
     away_stats = STATS_WINDOWS.xs(fixture_id).xs(away_id).xs(0).mean()
-    away_stats.index = ["away_" + name for name in home_stats.index]
+    away_stats.index = ["away_" + name for name in away_stats.index]
     
     return pd.concat([home_stats, away_stats])
 
@@ -184,6 +184,7 @@ def get_top_player_stats(dataframe, n_past_games):
 def get_top_n_stats(row, stat, team, n):
     """ get_top_n_goal_scorers """
     global TOP_PLAYER_STATS
+    # TODO shift somewhere to insure only preceding games
     vals = TOP_PLAYER_STATS[TOP_PLAYER_STATS["team_id"] == row[team]].xs(row.name, level=1)[stat].nlargest(n).sort_values(ascending=False)
     top_goal_scorers = pd.Series(vals.values)
     return top_goal_scorers
