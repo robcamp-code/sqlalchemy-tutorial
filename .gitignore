@@ -163,3 +163,4 @@ cython_debug/
 http_cache.sqlite3
 
 snapshots
+.DS_Store

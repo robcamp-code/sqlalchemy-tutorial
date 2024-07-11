@@ -72,7 +72,6 @@ def create_trial_folder(dataset, trial_number:int):
     shutil.copy(dataset, f'../data/trial_{trial_number}/dataset.csv')
     
 
-
 def get_feature_importances(pipeline, X_test):
     regressor = pipeline['regressor'].best_estimator_
     coefs = list(np.round(regressor.coef_, 3))
@@ -174,7 +173,6 @@ def run_trial():
         ht.to_csv(f'../data/hyperparameter_table.csv')
     else:
         trial_results.to_csv(f'../data/trial_{trial_number}/hyperparameter_table.csv')
-
 
 
 if __name__ == "__main__":
