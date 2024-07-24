@@ -54,5 +54,4 @@ class DateTransformer(BaseEstimator, TransformerMixin):
             return_cols.append(f"{date_col}_weekday")
             return_cols.append(f"{date_col}_is_weekend")
 
-        print((X.columns))   
         return X.loc[:, return_cols]
